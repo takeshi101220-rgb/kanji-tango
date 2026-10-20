@@ -1,0 +1,176 @@
+<title>漢字単語帳</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@500;700&display=swap">
+<style>
+/* Layout: one column; unit grid first, then a single large flashcard with reveal-reading flow */
+:root{
+  --bg:#f3f5f8; --surface:#ffffff; --fg:#1b2433; --muted:#5d6b80; --line:#d9dfe8;
+  --accent:#27557f; --accent-fg:#ffffff; --accent-soft:#e3edf7;
+  --good:#1d7a4f; --good-soft:#dff2e8; --again:#b3452c; --again-soft:#f8e4de;
+  --font-ui:"Zen Kaku Gothic New","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --font-kanji:"Zen Old Mincho","Hiragino Mincho ProN","Yu Mincho",serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12171f; --surface:#1b222d; --fg:#e8edf4; --muted:#9aa8bb; --line:#2e3948;
+  --accent:#8fbbe8; --accent-fg:#0f1722; --accent-soft:#22334a;
+  --good:#6fd0a0; --good-soft:#1e3a2e; --again:#f09a82; --again-soft:#43251d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12171f; --surface:#1b222d; --fg:#e8edf4; --muted:#9aa8bb; --line:#2e3948;
+  --accent:#8fbbe8; --accent-fg:#0f1722; --accent-soft:#22334a;
+  --good:#6fd0a0; --good-soft:#1e3a2e; --again:#f09a82; --again-soft:#43251d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-ui);font-size:16px;line-height:1.6;
+  padding-block:24px 40px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:640px;margin:0 auto}
+h1{font-family:var(--font-kanji);font-size:1.6rem;margin:0;letter-spacing:.04em}
+.sub{color:var(--muted);margin:4px 0 20px;font-size:.95rem}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:10px}
+.unit{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 8px;text-align:center;display:flex;flex-direction:column;gap:2px}
+.unit:hover{border-color:var(--accent);background:var(--accent-soft)}
+.unit .n{font-size:.75rem;color:var(--muted);letter-spacing:.1em}
+.unit .num{font-family:var(--font-kanji);font-size:1.9rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.unit .c{font-size:.8rem;color:var(--muted)}
+.opt{display:flex;align-items:center;gap:8px;margin:0 0 16px;color:var(--muted);font-size:.95rem}
+.opt input{width:18px;height:18px;accent-color:var(--accent)}
+.bar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.link{background:none;border:0;color:var(--accent);padding:6px 0;font-size:.95rem}
+.count{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.95rem}
+.prog{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-bottom:16px}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-height:300px;padding:28px 16px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;text-align:center}
+.kanji{font-family:var(--font-kanji);font-weight:700;line-height:1.35;display:flex;flex-direction:column;gap:6px;overflow-wrap:anywhere}
+.reading{font-size:1.5rem;font-weight:500;color:var(--accent);display:flex;flex-direction:column;gap:4px;min-height:3.2em;justify-content:center;overflow-wrap:anywhere}
+.reading.hide{visibility:hidden}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:14px 12px;font-weight:500}
+.btn.primary{grid-column:1/-1;background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-weight:700}
+.btn.again{background:var(--again-soft);color:var(--again);border-color:transparent}
+.btn.good{background:var(--good-soft);color:var(--good);border-color:transparent}
+.hint{color:var(--muted);font-size:.85rem;text-align:center;margin-top:12px}
+.done h2{font-family:var(--font-kanji);margin:0 0 4px}
+.stats{display:flex;gap:10px;margin:16px 0}
+.stat{flex:1;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px;text-align:center}
+.stat b{display:block;font-size:1.6rem;font-variant-numeric:tabular-nums}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:6px;margin:0 0 16px;padding:0;list-style:none}
+.list li{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+.list .k{font-family:var(--font-kanji);font-weight:700}
+.list .y{color:var(--muted);text-align:right}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main>
+  <section id="home">
+    <h1>漢字単語帳</h1>
+    <p class="sub">ユニットを選んでください。漢字を見て、読み方を思い出してから確認します。</p>
+    <label class="opt"><input type="checkbox" id="shuffle"> 順番をシャッフルする</label>
+    <div class="grid" id="units"></div>
+  </section>
+
+  <section id="study" hidden>
+    <div class="bar">
+      <button class="link" id="back">← ユニット選択</button>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="prog"><i id="prog"></i></div>
+    <div class="card" id="card">
+      <div class="kanji" id="kanji"></div>
+      <div class="reading hide" id="reading" aria-live="polite"></div>
+    </div>
+    <div class="actions" id="actions"></div>
+    <p class="hint">キーボード: Space で読み方を表示 / ← もう一度 / → 覚えた</p>
+  </section>
+
+  <section id="done" class="done" hidden>
+    <h2 id="doneTitle"></h2>
+    <div class="stats">
+      <div class="stat"><b id="sGood">0</b>覚えた</div>
+      <div class="stat"><b id="sAgain">0</b>もう一度</div>
+    </div>
+    <ul class="list" id="againList"></ul>
+    <div class="actions">
+      <button class="btn primary" id="retryAgain">もう一度の語だけ復習する</button>
+      <button class="btn" id="restart">最初からやり直す</button>
+      <button class="btn" id="home2">ユニット選択へ</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const DATA = {"36": [["野菜", "やさい"], ["船", "ふね"], ["日記", "にっき"], ["水泳　泳ぐ", "すいえい　およ-ぐ"], ["初め", "はじ-め"], ["特別な", "とくべつ-な"], ["渡る", "わた-る"], ["過ぎる", "す-ぎる"], ["違う", "ちが-う"], ["慣れる", "な-れる"], ["必ず", "かなら-ず"]], "37": [["絵", "え"], ["お寺", "お-てら"], ["池", "いけ"], ["石油", "せきゆ"], ["原料", "げんりょう"], ["輸出する", "ゆしゅつ-する"], ["輸入する", "ゆにゅう-する"], ["呼ぶ", "よ-ぶ"], ["頼む", "たの-む"], ["注意する", "ちゅうい-する"], ["招待する", "しょうたい-する"]], "38": [["卵", "たまご"], ["村", "むら"], ["海岸", "かいがん"], ["工場", "こうじょう"], ["日本製", "にほんせい"], ["１冊", "いっさつ"], ["無理な", "むり-な"], ["難しい", "むずか-しい"], ["速い", "はや-い"], ["育てる", "そだ-てる"], ["負ける", "ま-ける"], ["散歩する", "さんぽ-する"]], "39": [["地震", "じしん"], ["交通", "こうつう"], ["電気代", "でんきだい"], ["複雑な", "ふくざつ-な"], ["狭い", "せま-い"], ["恥ずかしい", "は-ずかしい"], ["困る", "こま-る"], ["死ぬ", "し-ぬ"], ["倒れる", "たお-れる"], ["大勢", "おおぜい"], ["途中で", "とちゅう-で"]], "40": [["靴", "くつ"], ["都合", "つごう"], ["返事", "へんじ"], ["表　発表", "おもて　はっぴょう"], ["確かめる", "たし-かめる"], ["残る", "のこ-る"], ["数える", "かぞ-える"], ["若い", "わか-い"], ["心配な", "しんぱい-な"], ["20キロ以下", "にじゅっきろ　いか"]], "41": [["お祝い", "お-いわ-い"], ["お見舞い", "お-みま-い"], ["お土産", "お-みあげ"], ["祖母", "そぼ"], ["娘", "むすめ"], ["息子", "むすこ"], ["作文　文法", "さくぶん　ぶんぽう"], ["方法　文法", "ほうほう　ぶんぽう"], ["宿題", "しゅくだい"], ["直す", "なお-す"], ["取り替える", "と-り　か-える"], ["珍しい", "めずら-しい"]], "42": [["政治", "せいじ"], ["文化", "ぶんか"], ["法律", "ほうりつ"], ["両親", "りょうしん"], ["緑", "みどり"], ["欲しい", "ほ-しい"], ["必要な", "ひつよう-な"], ["包む", "つつ-む"], ["沸かす", "わ-かす"], ["払う", "はら-う"], ["全部", "ぜんぶ"]], "43": [["米", "こめ"], ["辞書", "じしょ"], ["切符", "きっぷ"], ["暑い", "あつ-い"], ["寒い", "さむ-い"], ["暖かい", "あたた-かい"], ["咲く", "さ-く"], ["消える", "き-える"], ["増える", "ふ-える"], ["迎える", "むか-える"], ["２枚", "に-まい"]], "44": [["頭", "あたま"], ["髪", "かみ"], ["薬", "くすり"], ["洋食", "ようしょく"], ["痛い", "いた-い"], ["厚い　薄い", "あつ-い　うす-い"], ["太い", "ふと-い"], ["静かな", "しず-かな"], ["泣く", "な-く"], ["笑う", "わら-う"], ["割れる", "わ-れる"], ["３倍", "さん-ばい"]], "45": [["点", "てん"], ["皆さん", "みな-さん"], ["資料", "しりょう"], ["給料", "きゅうりょう"], ["家賃", "やちん"], ["値段", "ねだん"], ["風", "かぜ"], ["働く", "はたら-く"], ["残念です", "ざんねん-です"]], "46": [["彼　彼女", "かれ　かのじょ"], ["原因", "げんいん"], ["係員", "かかりいん"], ["卒業する", "そつぎょう-する"], ["相談する", "そうだん-する"], ["乾く", "かわ-く"], ["届く", "とど-く"], ["焼く", "や-く"], ["焼ける", "や-ける"]], "47": [["祭り", "まつ-り"], ["科学", "かがく"], ["庭", "にわ"], ["天気予報", "てんきよほう"], ["実験", "じっけん"], ["雑誌", "ざっし"], ["億", "おく"], ["事務所", "じむしょ"], ["怖い", "こわ-い"], ["吹く", "ふ-く"], ["失敗する", "しっぱい-する"], ["亡くなる", "な-くなる"]], "48": [["生徒", "せいと"], ["田中君", "たなかくん"], ["牛乳", "ぎゅうにゅう"], ["柔道", "じゅうどう"], ["準備", "じゅんび"], ["営業", "えいぎょう"], ["忙しい", "いそがしい"], ["留学する", "りゅうがく-する"], ["自由に", "じゆう-に"]], "49": [["ご存じ", "ご-ぞん-じ"], ["妻　奥様", "つま　おくさま"], ["首相", "しゅしょう"], ["疲れる", "つか-れる"], ["勤める", "つと-める"], ["泊まる", "と-まる"], ["出張する", "しゅっちょう-する"], ["引っ越しする", "ひっこし-する"], ["合格する", "ごうかく-する"], ["失礼します", "しつれい-します"], ["木村様", "きむらさま"]], "50": [["お宅", "お-たく"], ["私", "わたくし"], ["自然", "しぜん"], ["結婚式", "けっこんしき"], ["参る", "まい-る"], ["伺う", "うかが-う"], ["申す", "もう-す"], ["拝見する", "はいけん-する"], ["案内する", "あんない-する"], ["到着する", "とうちゃく-する"], ["優勝する", "ゆうしょう-する"]]};
+const $ = id => document.getElementById(id);
+let unit = null, queue = [], pos = 0, shown = false, good = [], again = [];
+
+function lines(s){ return s.split(/[　 ]+/).filter(Boolean); }
+function fill(el, s){ el.replaceChildren(...lines(s).map(t => { const d=document.createElement('div'); d.textContent=t; return d; })); }
+function show(id){ for (const s of ['home','study','done']) $(s).hidden = s !== id; window.scrollTo(0,0); }
+
+function buildHome(){
+  const g = $('units');
+  Object.keys(DATA).forEach(u => {
+    const b = document.createElement('button');
+    b.className = 'unit';
+    b.innerHTML = '<span class="n">UNIT</span><span class="num"></span><span class="c"></span>';
+    b.querySelector('.num').textContent = u;
+    b.querySelector('.c').textContent = DATA[u].length + '語';
+    b.onclick = () => start(u);
+    g.appendChild(b);
+  });
+}
+function shuffled(a){ a = a.slice(); for (let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+function start(u, items){
+  unit = u;
+  queue = items || DATA[u].map(x => x);
+  if ($('shuffle').checked) queue = shuffled(queue);
+  pos = 0; good = []; again = []; shown = false;
+  show('study'); render();
+}
+function sizeFor(items){
+  const m = Math.max(...items.map(s => s.length));
+  return m <= 2 ? '5.5rem' : m <= 4 ? '3.6rem' : m <= 6 ? '2.6rem' : '2rem';
+}
+function render(){
+  const [k, y] = queue[pos];
+  $('count').textContent = 'ユニット ' + unit + '　' + (pos+1) + ' / ' + queue.length;
+  $('prog').style.width = (pos / queue.length * 100) + '%';
+  fill($('kanji'), k); fill($('reading'), y);
+  $('kanji').style.fontSize = sizeFor(lines(k));
+  $('reading').classList.toggle('hide', !shown);
+  const a = $('actions'); a.replaceChildren();
+  if (!shown) {
+    a.append(btn('読み方を見る', 'btn primary', reveal));
+  } else {
+    a.append(btn('もう一度', 'btn again', () => answer(false)), btn('覚えた', 'btn good', () => answer(true)));
+  }
+}
+function btn(t, c, f){ const b=document.createElement('button'); b.className=c; b.textContent=t; b.onclick=f; return b; }
+function reveal(){ shown = true; render(); }
+function answer(ok){
+  (ok ? good : again).push(queue[pos]);
+  pos++; shown = false;
+  if (pos >= queue.length) finish(); else render();
+}
+function finish(){
+  $('doneTitle').textContent = 'ユニット ' + unit + ' おつかれさまでした';
+  $('sGood').textContent = good.length; $('sAgain').textContent = again.length;
+  const l = $('againList'); l.replaceChildren();
+  again.forEach(([k,y]) => { const li=document.createElement('li'); const a=document.createElement('span'); a.className='k'; a.textContent=k; const b=document.createElement('span'); b.className='y'; b.textContent=y; li.append(a,b); l.appendChild(li); });
+  l.hidden = !again.length; $('retryAgain').hidden = !again.length;
+  show('done');
+}
+$('back').onclick = () => show('home');
+$('home2').onclick = () => show('home');
+$('restart').onclick = () => start(unit);
+$('retryAgain').onclick = () => start(unit, again.slice());
+document.addEventListener('keydown', e => {
+  if ($('study').hidden) return;
+  if (e.key === ' ' || e.key === 'Enter') { if (!shown) { e.preventDefault(); reveal(); } }
+  else if (shown && e.key === 'ArrowLeft') answer(false);
+  else if (shown && e.key === 'ArrowRight') answer(true);
+});
+buildHome();
+</script>
